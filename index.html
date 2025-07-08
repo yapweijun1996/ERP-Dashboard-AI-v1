@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ERP System Pro Dashboard</title>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google Fonts - Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* CSS Variables for Color Palette */
+    :root {
+      --primary-blue: #3468C0;
+      --secondary-green: #86A789;
+      --accent-orange: #FFDD95;
+      --text-dark: #2C3E50;
+      --text-light: #ECF0F1;
+      --background-light: #F8F9FA;
+      --background-gradient-start: #E0E7EB;
+      --background-gradient-end: #C5D0D8;
+      --card-background: #FFFFFF;
+      --border-light: #DDE6ED;
+      --shadow-light: rgba(0, 0, 0, 0.08);
+      --shadow-hover: rgba(0, 0, 0, 0.15);
+    }
+
+    /* Reset and base */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, var(--background-gradient-start), var(--background-gradient-end));
+      color: var(--text-dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.6;
+    }
+
+    .dashboard-container {
+      max-width: 1400px;
+      margin: 2.5rem auto;
+      padding: 0 2rem;
+      width: 100%;
+    }
+
+    header {
+      background-color: var(--primary-blue);
+      color: var(--text-light);
+      padding: 2rem 2.5rem;
+      border-radius: 12px;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 6px 18px var(--shadow-hover);
+      text-align: center;
+    }
+    header h1 {
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      margin-bottom: 0.75rem;
+      line-height: 1.2;
+    }
+    .dashboard-description {
+      font-size: 1.15rem;
+      color: var(--text-light);
+      max-width: 800px;
+      margin: 0.75rem auto 0;
+      line-height: 1.6;
+    }
+
+    .kpi-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+    .kpi-card {
+      background: var(--card-background);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px var(--shadow-light);
+      border: 1px solid var(--border-light);
+      padding: 2rem;
+      text-align: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .kpi-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px var(--shadow-hover);
+    }
+    .kpi-card h3 {
+      font-size: 1.3rem;
+      color: var(--primary-blue);
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+    .kpi-card .kpi-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 0.5rem;
+      line-height: 1.2;
+    }
+    .kpi-card .kpi-description {
+      font-size: 0.95rem;
+      color: #6B7A8F;
+      line-height: 1.4;
+    }
+
+    main {
+      display: flex;
+      flex-direction: column;
+      gap: 3rem;
+    }
+
+    .dashboard-section {
+      background: var(--card-background);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px var(--shadow-light);
+      padding: 2.5rem;
+    }
+    .section-header {
+      font-size: 2.2rem;
+      color: var(--text-dark);
+      margin-bottom: 1rem;
+      border-bottom: 3px solid var(--secondary-green);
+      padding-bottom: 0.75rem;
+      letter-spacing: 0.8px;
+      font-weight: 700;
+    }
+    .section-description {
+      font-size: 1.05rem;
+      color: #6B7A8F;
+      margin-bottom: 2.5rem;
+      line-height: 1.6;
+    }
+    .section-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2.5rem;
+    }
+
+    section.card {
+      background: var(--background-light);
+      border-radius: 10px;
+      border: 1px solid var(--border-light);
+      box-shadow: 0 2px 8px var(--shadow-light);
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: default;
+    }
+    section.card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 12px var(--shadow-hover);
+    }
+    section.card h2 {
+      margin: 0 0 1rem 0;
+      font-weight: 600;
+      font-size: 1.4rem;
+      color: var(--text-dark);
+      border-bottom: 2px solid var(--primary-blue);
+      padding-bottom: 0.5rem;
+    }
+    .chart-description {
+      font-size: 0.9rem;
+      color: #6B7A8F;
+      margin-bottom: 1.8rem;
+      line-height: 1.5;
+    }
+    /* Wrap canvas in a container to control aspect ratio */
+    .chart-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9; /* Maintain 16:9 aspect ratio */
+      border-radius: 8px;
+      background: var(--card-background);
+      box-shadow: inset 0 0 8px rgba(52, 104, 192, 0.1);
+      margin-bottom: 1.5rem;
+    }
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+      border-radius: 8px;
+      background: transparent;
+      box-shadow: none;
+      display: block;
+    }
+
+   .summary-container {
+     margin-top: 1.5rem;
+     padding: 1rem 1.2rem;
+     background-color: var(--background-light);
+     border: 1px solid var(--border-light);
+     border-radius: 8px;
+     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+     font-size: 0.95rem;
+     line-height: 1.5;
+     color: var(--text-dark);
+   }
+
+   .summary-container p {
+     margin: 0;
+     padding: 0;
+   }
+
+   .summary-container strong {
+     color: var(--primary-blue);
+   }
+
+   .overall-status-container {
+     margin-top: 3rem;
+     padding: 2rem;
+     background-color: var(--primary-blue);
+     color: var(--text-light);
+     border-radius: 12px;
+     box-shadow: 0 6px 18px var(--shadow-hover);
+     font-size: 1.1rem;
+     line-height: 1.8;
+   }
+
+   .overall-status-container h2 {
+     font-size: 1.8rem;
+     font-weight: 700;
+     margin-bottom: 1rem;
+     border-bottom: 2px solid var(--accent-orange);
+     padding-bottom: 0.5rem;
+   }
+
+   .overall-status-container p {
+     margin: 0;
+     padding: 0;
+   }
+
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+      .dashboard-container {
+        padding: 0 1.5rem;
+        margin: 2rem auto;
+      }
+      .section-content {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+      }
+      canvas {
+      }
+      .kpi-cards {
+        gap: 1.5rem;
+      }
+      .kpi-card {
+        padding: 1.5rem;
+      }
+      .dashboard-section {
+        padding: 2rem;
+      }
+      section.card {
+        padding: 1.5rem;
+      }
+    }
+
+    @media (max-width: 900px) {
+      header h1 {
+        font-size: 2.2rem;
+      }
+      .dashboard-description {
+        font-size: 1.05rem;
+      }
+      .kpi-cards {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+      }
+      .kpi-card .kpi-value {
+        font-size: 2rem;
+      }
+      .dashboard-section {
+        padding: 1.8rem;
+      }
+      .section-header {
+        font-size: 1.9rem;
+      }
+      .section-description {
+        font-size: 0.95rem;
+        margin-bottom: 2rem;
+      }
+      .section-content {
+        grid-template-columns: 1fr; /* Stack on smaller screens */
+        gap: 1.5rem;
+      }
+      section.card {
+        padding: 1.2rem;
+      }
+      section.card h2 {
+        font-size: 1.25rem;
+      }
+      .chart-description {
+        font-size: 0.85rem;
+        margin-bottom: 1.2rem;
+      }
+      canvas {
+      }
+    }
+
+    @media (max-width: 600px) {
+      .dashboard-container {
+        margin: 1.5rem auto;
+        padding: 0 1rem;
+      }
+      header {
+        padding: 1.5rem 1.5rem;
+        margin-bottom: 2rem;
+      }
+      header h1 {
+        font-size: 2rem;
+      }
+      .kpi-cards {
+        grid-template-columns: 1fr; /* Stack KPIs on very small screens */
+      }
+      .kpi-card {
+        padding: 1.2rem;
+      }
+      .kpi-card h3 {
+        font-size: 1.1rem;
+      }
+      .kpi-card .kpi-value {
+        font-size: 1.8rem;
+      }
+      .dashboard-section {
+        padding: 1.5rem;
+      }
+      .section-header {
+        font-size: 1.7rem;
+      }
+      canvas {
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <header>
+      <h1>ERP System Pro Dashboard</h1>
+      <p class="dashboard-description">A comprehensive overview of key business metrics across finance, sales, and inventory management. This dashboard provides real-time insights to support informed decision-making and operational efficiency.</p>
+    </header>
+
+    <section class="kpi-cards">
+      <div class="kpi-card">
+        <h3>Total Revenue</h3>
+        <p class="kpi-value">$1.2M</p>
+        <p class="kpi-description">Year-to-date revenue across all sales channels.</p>
+      </div>
+      <div class="kpi-card">
+        <h3>Net Profit</h3>
+        <p class="kpi-value">$350K</p>
+        <p class="kpi-description">Overall profitability after all expenses.</p>
+      </div>
+      <div class="kpi-card">
+        <h3>Total Sales Orders</h3>
+        <p class="kpi-value">5,800</p>
+        <p class="kpi-description">Number of sales orders processed this quarter.</p>
+      </div>
+      <div class="kpi-card">
+        <h3>Current Inventory Value</h3>
+        <p class="kpi-value">$420K</p>
+        <p class="kpi-description">Total value of goods currently in stock.</p>
+      </div>
+    </section>
+
+    <main>
+      <section class="dashboard-section">
+        <h2 class="section-header">Financial Overview</h2>
+        <p class="section-description">Key financial indicators providing insights into the company's economic health and performance.</p>
+        <div class="section-content">
+          <section class="card" id="finances-section">
+            <h2>Quarterly Financial Performance</h2>
+            <p class="chart-description">Visualizes revenue and expenses per quarter, highlighting financial trends and profitability.</p>
+            <div class="chart-filters">
+              <label for="financesFilter">Filter by:</label>
+              <select id="financesFilter">
+                <option value="Q1-Q4">Year-to-Date</option>
+                <option value="Q1-Q2">First Half</option>
+                <option value="Q3-Q4">Second Half</option>
+              </select>
+            </div>
+            <div class="chart-container">
+              <canvas id="financesChart"></canvas>
+            </div>
+            <div id="financesSummary" class="summary-container"></div>
+          </section>
+          <section class="card" id="financial-kpis-section">
+            <h2>Key Financial Performance Indicators</h2>
+            <p class="chart-description">A radar chart showing the current status of critical financial KPIs like profit margin, cash flow, and ROI.</p>
+            <div class="chart-container">
+              <canvas id="financialKpisChart"></canvas>
+            </div>
+            <div id="financialKpisSummary" class="summary-container"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="dashboard-section">
+        <h2 class="section-header">Sales & Purchase Performance</h2>
+        <p class="section-description">Analysis of sales trends, regional distribution, and procurement activities to optimize operations.</p>
+        <div class="section-content">
+          <section class="card" id="sales-section">
+            <h2>Monthly Sales Revenue Trends</h2>
+            <p class="chart-description">Tracks the monthly sales revenue to identify growth patterns and seasonal variations.</p>
+            <div class="chart-filters">
+              <label for="salesFilter">Filter by:</label>
+              <select id="salesFilter">
+                <option value="all">All Months</option>
+                <option value="last3">Last 3 Months</option>
+                <option value="last6">Last 6 Months</option>
+              </select>
+            </div>
+            <div class="chart-container">
+              <canvas id="salesChart"></canvas>
+            </div>
+            <div id="salesSummary" class="summary-container"></div>
+          </section>
+          <section class="card" id="sales-region-section">
+            <h2>Sales Distribution by Region</h2>
+            <p class="chart-description">Illustrates the proportion of sales generated from different geographical regions.</p>
+            <div class="chart-container">
+              <canvas id="salesRegionChart"></canvas>
+            </div>
+            <div id="salesRegionSummary" class="summary-container"></div>
+          </section>
+          <section class="card" id="purchase-section">
+            <h2>Purchase Category Expenditure</h2>
+            <p class="chart-description">Breaks down expenditure by purchase categories, helping to manage costs and supplier relationships.</p>
+            <div class="chart-container">
+              <canvas id="purchaseChart"></canvas>
+            </div>
+            <div id="purchaseSummary" class="summary-container"></div>
+          </section>
+          <section class="card" id="purchase-status-section">
+            <h2>Purchase Order Status Distribution</h2>
+            <p class="chart-description">Shows the current status of all purchase orders, from pending to delivered or cancelled.</p>
+            <div class="chart-container">
+              <canvas id="purchaseStatusChart"></canvas>
+            </div>
+            <div id="purchaseStatusSummary" class="summary-container"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="dashboard-section">
+        <h2 class="section-header">Inventory Management</h2>
+        <p class="section-description">Insights into inventory levels, stock movement, and turnover rates to ensure optimal stock levels and reduce carrying costs.</p>
+        <div class="section-content">
+          <section class="card" id="inventory-section">
+            <h2>Current Inventory Status Distribution</h2>
+            <p class="chart-description">Provides a snapshot of inventory levels, categorizing items as in stock, low stock, out of stock, or on order.</p>
+            <div class="chart-container">
+              <canvas id="inventoryChart"></canvas>
+            </div>
+            <div id="inventorySummary" class="summary-container"></div>
+          </section>
+          <section class="card" id="inventory-turnover-section">
+            <h2>Monthly Inventory Turnover Rate</h2>
+            <p class="chart-description">Measures how many times inventory is sold or used over a period, indicating efficiency in inventory management.</p>
+            <div class="chart-container">
+              <canvas id="inventoryTurnoverChart"></canvas>
+            </div>
+            <div id="inventoryTurnoverSummary" class="summary-container"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <section class="overall-status-container">
+      <h2>Overall Company Status Summary</h2>
+      <div id="overallStatusSummary"></div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script type="module">
+    import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+    console.log('Script start');
+    // Removed global Chart.defaults adjustments to avoid conflicts
+
+    const apiKey = "AIzaSyAdtOk3B9vzQIzhxqMyB3WrHmN-OSy8UnY";
+    const genAI = new GoogleGenerativeAI(apiKey);
+
+    const generationConfig = {
+      temperature: 0.9,
+      topK: 1,
+      topP: 1,
+      maxOutputTokens: 2048,
+    };
+
+    let chatHistory = []; // To maintain conversation history if needed for context
+
+    async function startChatSession() {
+      const model = genAI.getGenerativeModel({ model: "gemma-3-27b-it" });
+      return model.startChat({
+        generationConfig,
+        history: chatHistory,
+      });
+    }
+
+    // Helper function to read file as Base64 (not directly used for text, but good to have for image input)
+    function readFileAsBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    /**
+     * Appends a message to a specific summary div.
+     * @param {string} targetElementId - The ID of the div element to append the message to.
+     * @param {string} sender - The sender of the message (e.g., 'AI', 'User').
+     * @param {string} text - The text content of the message.
+     */
+    function appendMessage(targetElementId, sender, text) {
+      const targetDiv = document.getElementById(targetElementId);
+      if (targetDiv) {
+        // Parse markdown text to HTML using marked
+        const parsedHTML = marked.parse(text);
+        targetDiv.innerHTML = `<p><strong>${sender}:</strong></p>` + parsedHTML;
+      }
+    }
+
+    /**
+     * Runs a chat session with the Gemini API and displays the response in a specific summary div.
+     * @param {string} prompt - The prompt to send to the Gemini API.
+     * @param {string} targetElementId - The ID of the div element to display the summary in.
+     */
+    async function runChat(prompt, targetElementId) {
+      const loadingMessage = "Loading summary...";
+      appendMessage(targetElementId, "AI", loadingMessage); // Display loading indicator
+
+      try {
+        const chat = await startChatSession();
+        const result = await chat.sendMessage(prompt);
+        const response = await result.response;
+        const text = response.text();
+        appendMessage(targetElementId, "AI", text);
+        chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+        chatHistory.push({ role: "model", parts: [{ text: text }] });
+      } catch (error) {
+        console.error("Error calling Gemini API:", error);
+        appendMessage(targetElementId, "AI", "Error fetching summary.");
+      }
+    }
+
+    /**
+     * Initializes and returns a Chart.js chart instance.
+     * @param {string} canvasId - The ID of the canvas element.
+     * @param {string} type - The type of chart (bar, pie, line, doughnut).
+     * @param {object} data - The data object for the chart.
+     * @param {object} options - The options object for the chart.
+     * @returns {Chart} The initialized Chart.js instance.
+     */
+    function createChart(canvasId, type, data, options) {
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      return new Chart(ctx, {
+        type,
+        data,
+        options
+      });
+    }
+
+    /**
+     * Generates realistic monthly data for a year.
+     * @param {number} base - Base value for the data.
+     * @param {number} fluctuation - Max fluctuation percentage (e.g., 0.2 for 20%).
+     * @returns {number[]} Array of 12 monthly data points.
+     */
+    function generateMonthlyData(base, fluctuation) {
+      return Array.from({ length: 12 }, (_, i) => {
+        const randomFactor = 1 + (Math.random() * 2 - 1) * fluctuation; // -fluctuation to +fluctuation
+        return Math.round(base * randomFactor);
+      });
+    }
+
+    /**
+     * Generates realistic category distribution data.
+     * @param {number} total - Total value to distribute.
+     * @param {number} numCategories - Number of categories.
+     * @returns {number[]} Array of data points for categories.
+     */
+    function generateCategoryData(total, numCategories) {
+      const data = [];
+      let remaining = total;
+      for (let i = 0; i < numCategories - 1; i++) {
+        const value = Math.round(Math.random() * remaining * (0.1 + 0.4 / (numCategories - i))); // Distribute unevenly
+        data.push(value);
+        remaining -= value;
+      }
+      data.push(remaining); // Last category takes the rest
+      return data.sort((a, b) => b - a); // Sort for better visualization
+    }
+
+    /**
+     * Initializes all dashboard charts.
+     */
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    /**
+     * Initializes all dashboard charts and fetches AI summaries.
+     */
+    function initializeDashboardCharts() {
+      console.log('initializeDashboardCharts called');
+      // Destroy existing charts to avoid duplicates on re-initialization
+      document.querySelectorAll('canvas').forEach(canvas => {
+        const chart = Chart.getChart(canvas);
+        if (chart) chart.destroy();
+      });
+      const chartInstances = {}; // Store chart instances for data extraction
+
+      // Helper to extract data and generate prompt
+      function getChartDataAndPrompt(chartName, labels, data, type) {
+        let prompt = `Provide a concise summary for the ${chartName} chart. `;
+        if (type === 'line' || type === 'bar') {
+          prompt += `The data points are: ${data.join(', ')}. The labels are: ${labels.join(', ')}. `;
+          if (type === 'line') {
+            const latestValue = data[data.length - 1];
+            const trend = data[data.length - 1] > data[0] ? 'increasing' : 'decreasing';
+            prompt += `The latest value is ${latestValue} and the trend is ${trend}. `;
+          }
+        } else if (type === 'pie' || type === 'doughnut') {
+          const total = data.reduce((sum, val) => sum + val, 0);
+          prompt += `The distribution is: ${labels.map((l, i) => `${l}: ${data[i]}`).join(', ')}. Total: ${total}. `;
+        }
+        prompt += "Highlight if the performance is good or bad and why, and suggest actionable insights.";
+        return prompt;
+      }
+
+      // Sales - Line Chart: Monthly sales revenue
+      const salesRevenueData = generateMonthlyData(150000, 0.25);
+      chartInstances.salesChart = createChart('salesChart', 'line', {
+        labels: months,
+        datasets: [{
+          label: 'Monthly Sales Revenue (USD)',
+          data: salesRevenueData,
+          borderColor: '#4a90e2',
+          backgroundColor: 'rgba(74, 144, 226, 0.2)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 5,
+          pointBackgroundColor: '#4a90e2',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 2,
+          pointHoverRadius: 7,
+        }]
+      }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Monthly Sales Revenue Trends',
+            font: { size: 16, weight: 'bold' },
+            color: '#2a3f54'
+          },
+          legend: { display: true, position: 'top' },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: '#1f2a38',
+            titleColor: '#f0f4f8',
+            bodyColor: '#f0f4f8',
+            padding: 10,
+            cornerRadius: 5,
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.y !== null) {
+                  label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                }
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Revenue (USD)',
+              color: '#2a3f54'
+            },
+            ticks: {
+              callback: function(value) {
+                return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact' }).format(value);
+              }
+            }
+          }
+        },
+        animation: {
+          duration: 1000,
+          easing: 'easeOutBounce'
+        }
+      });
+      runChat(getChartDataAndPrompt('Monthly Sales Revenue Trends', months, salesRevenueData, 'line'), 'salesSummary');
+
+      // Purchase - Bar Chart: Top 5 Purchase Categories
+      const purchaseCategories = ['Raw Materials', 'Office Supplies', 'Equipment', 'Services', 'Marketing', 'Utilities', 'Software Licenses'];
+      const purchaseData = generateCategoryData(250000, purchaseCategories.length);
+      chartInstances.purchaseChart = createChart('purchaseChart', 'bar', {
+        labels: purchaseCategories,
+        datasets: [{
+          label: 'Expenditure (USD)',
+          data: purchaseData,
+          backgroundColor: [
+            '#4a90e2', '#50e3c2', '#f5a623', '#d0021b', '#9b59b6', '#3498db', '#e74c3c'
+          ],
+          borderColor: '#ffffff',
+          borderWidth: 1,
+          borderRadius: 5,
+        }]
+      }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Purchase Category Expenditure',
+            font: { size: 16, weight: 'bold' },
+            color: '#2a3f54'
+          },
+          legend: { display: false },
+          tooltip: {
+            enabled: true,
+            backgroundColor: '#1f2a38',
+            titleColor: '#f0f4f8',
+            bodyColor: '#f0f4f8',
+            padding: 10,
+            cornerRadius: 5,
+            callbacks: {
+              label: function(context) {
+                let label = context.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.y !== null) {
+                  label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                }
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Expenditure (USD)',
+              color: '#2a3f54'
+            },
+            ticks: {
+              callback: function(value) {
+                return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact' }).format(value);
+              }
+            }
+          }
+        },
+        animation: {
+          duration: 1000,
+          easing: 'easeOutBounce'
+        }
+      });
+      runChat(getChartDataAndPrompt('Purchase Category Expenditure', purchaseCategories, purchaseData, 'bar'), 'purchaseSummary');
+
+      // Inventory - Doughnut Chart: Inventory Status Distribution
+      const inventoryStatusLabels = ['In Stock', 'Low Stock', 'Out of Stock', 'On Order'];
+      const inventoryStatusData = generateCategoryData(10000, inventoryStatusLabels.length); // Total units
+      chartInstances.inventoryChart = createChart('inventoryChart', 'doughnut', {
+        labels: inventoryStatusLabels,
+        datasets: [{
+          label: 'Inventory Status',
+          data: inventoryStatusData,
+          backgroundColor: [
+            '#50e3c2', // In Stock (Green)
+            '#f5a623', // Low Stock (Orange)
+            '#d0021b', // Out of Stock (Red)
+            '#4a90e2'  // On Order (Blue)
+          ],
+          borderColor: '#ffffff',
+          borderWidth: 2
+        }]
+      }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+          title: {
+            display: true,
+            text: 'Current Inventory Status Distribution',
+            font: { size: 16, weight: 'bold' },
+            color: '#2a3f54'
+          },
+          legend: {
+            position: 'bottom',
+            labels: {
+              font: { size: 12 },
+              color: '#2a3f54'
+            }
+          },
+          tooltip: {
+            enabled: true,
+            backgroundColor: '#1f2a38',
+            titleColor: '#f0f4f8',
+            bodyColor: '#f0f4f8',
+            padding: 10,
+            cornerRadius: 5,
+            callbacks: {
+              label: function(context) {
+                let label = context.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed !== null) {
+                  label += new Intl.NumberFormat('en-US').format(context.parsed) + ' units';
+                }
+                return label;
+              }
+            }
+          }
+        },
+        animation: {
+          animateRotate: true,
+          animateScale: true,
+          duration: 1000
+        }
+      });
+      runChat(getChartDataAndPrompt('Current Inventory Status Distribution', inventoryStatusLabels, inventoryStatusData, 'doughnut'), 'inventorySummary');
+
+      // Finances - Bar Chart: Quarterly Revenue and Expenses
+      const quarterlyRevenue = generateMonthlyData(400000, 0.15).slice(0, 4); // 4 quarters
+      const quarterlyExpenses = generateMonthlyData(280000, 0.10).slice(0, 4); // 4 quarters
+      chartInstances.financesChart = createChart('financesChart', 'bar', {
+        labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+        datasets: [
+          {
+            label: 'Revenue (USD)',
+            data: quarterlyRevenue,
+            backgroundColor: '#50e3c2', // Green
+            borderColor: '#4CAF50',
+            borderWidth: 1,
+            borderRadius: 5,
+          },
+          {
+            label: 'Expenses (USD)',
+            data: quarterlyExpenses,
+            backgroundColor: '#d0021b', // Red
+            borderColor: '#F44336',
+            borderWidth: 1,
+            borderRadius: 5,
+          }
+        ]
+      }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Quarterly Financial Performance',
+            font: { size: 16, weight: 'bold' },
+            color: '#2a3f54'
+          },
+          legend: {
+            position: 'top',
+            labels: {
+              font: { size: 12 },
+              color: '#2a3f54'
+            }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: '#1f2a38',
+            titleColor: '#f0f4f8',
+            bodyColor: '#f0f4f8',
+            padding: 10,
+            cornerRadius: 5,
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.y !== null) {
+                  label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                }
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Amount (USD)',
+              color: '#2a3f54'
+            },
+            ticks: {
+              callback: function(value) {
+                return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact' }).format(value);
+              }
+            }
+          }
+        },
+        animation: {
+          duration: 1000,
+          easing: 'easeOutBounce'
+        }
+      });
+      runChat(getChartDataAndPrompt('Quarterly Financial Performance', ['Q1', 'Q2', 'Q3', 'Q4'], [quarterlyRevenue, quarterlyExpenses], 'bar'), 'financesSummary');
+
+
+      // Purchase Order Status - Pie Chart
+      const purchaseStatusLabels = ['Pending', 'Approved', 'Shipped', 'Delivered', 'Cancelled'];
+      const purchaseStatusData = generateCategoryData(500, purchaseStatusLabels.length);
+      chartInstances.purchaseStatusChart = createChart('purchaseStatusChart', 'pie', {
+        labels: purchaseStatusLabels,
+        datasets: [{
+          label: 'Purchase Order Status',
+          data: purchaseStatusData,
+          backgroundColor: [
+            'var(--accent-orange)', // Pending (Orange)
+            'var(--secondary-green)', // Approved (Green)
+            'var(--primary-blue)', // Shipped (Blue)
+            '#9b59b6', // Delivered (Purple)
+            '#d0021b'  // Cancelled (Red)
+          ],
+          borderColor: 'var(--card-background)',
+          borderWidth: 2
+        }]
+      }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Purchase Order Status Distribution',
+            font: { size: 16, weight: 'bold' },
+            color: 'var(--text-dark)'
+          },
+          legend: {
+            position: 'bottom',
+            labels: {
+              font: { size: 12 },
+              color: 'var(--text-dark)'
+            }
+          },
+          tooltip: {
+            enabled: true,
+            backgroundColor: 'var(--text-dark)',
+            titleColor: 'var(--text-light)',
+            bodyColor: 'var(--text-light)',
+            padding: 10,
+            cornerRadius: 5,
+            callbacks: {
+              label: function(context) {
+                let label = context.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed !== null) {
+                  label += new Intl.NumberFormat('en-US').format(context.parsed) + ' orders';
+                }
+                return label;
+              }
+            }
+          }
+        },
+        animation: {
+          animateRotate: true,
+          animateScale: true,
+          duration: 1000
+        }
+      });
+      runChat(getChartDataAndPrompt('Purchase Order Status Distribution', purchaseStatusLabels, purchaseStatusData, 'pie'), 'purchaseStatusSummary');
+
+      // Inventory Turnover Rate - Bar Chart
+      const inventoryTurnoverData = [4.5, 3.8, 5.2, 4.9, 5.5, 6.1, 5.8, 6.5, 7.0, 6.8, 7.2, 7.5]; // Monthly turnover
+      chartInstances.inventoryTurnoverChart = createChart('inventoryTurnoverChart', 'bar', {
+        labels: months,
+        datasets: [{
+          label: 'Inventory Turnover Rate',
+          data: inventoryTurnoverData,
+          backgroundColor: 'var(--accent-orange)', // Orange
+          borderColor: '#e67e22',
+          borderWidth: 1,
+          borderRadius: 5,
+        }]
+      }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Monthly Inventory Turnover Rate',
+            font: { size: 16, weight: 'bold' },
+            color: 'var(--text-dark)'
+          },
+          legend: { display: false },
+          tooltip: {
+            enabled: true,
+            backgroundColor: 'var(--text-dark)',
+            titleColor: 'var(--text-light)',
+            bodyColor: 'var(--text-light)',
+            padding: 10,
+            cornerRadius: 5,
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.y !== null) {
+                  label += context.parsed.y.toFixed(2) + ' times';
+                }
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Turnover Rate (times)',
+              color: 'var(--text-dark)'
+            },
+            ticks: {
+              callback: function(value) {
+                return value.toFixed(1);
+              }
+            }
+          }
+        },
+        animation: {
+          duration: 1000,
+          easing: 'easeOutBounce'
+        }
+      });
+      runChat(getChartDataAndPrompt('Monthly Inventory Turnover Rate', months, inventoryTurnoverData, 'bar'), 'inventoryTurnoverSummary');
+
+      // Sales by Region - Pie Chart
+      const salesRegionLabels = ['North America', 'Europe', 'Asia', 'South America', 'Africa', 'Oceania'];
+      const salesRegionData = generateCategoryData(1000000, salesRegionLabels.length);
+      chartInstances.salesRegionChart = createChart('salesRegionChart', 'pie', {
+        labels: salesRegionLabels,
+        datasets: [{
+          label: 'Sales by Region',
+          data: salesRegionData,
+          backgroundColor: [
+            'var(--primary-blue)', 'var(--secondary-green)', 'var(--accent-orange)', '#d0021b', '#9b59b6', '#3498db'
+          ],
+          borderColor: 'var(--card-background)',
+          borderWidth: 2
+        }]
+      }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Sales Distribution by Region',
+            font: { size: 16, weight: 'bold' },
+            color: 'var(--text-dark)'
+          },
+          legend: {
+            position: 'bottom',
+            labels: {
+              font: { size: 12 },
+              color: 'var(--text-dark)'
+            }
+          },
+          tooltip: {
+            enabled: true,
+            backgroundColor: 'var(--text-dark)',
+            titleColor: 'var(--text-light)',
+            bodyColor: 'var(--text-light)',
+            padding: 10,
+            cornerRadius: 5,
+            callbacks: {
+              label: function(context) {
+                let label = context.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed !== null) {
+                  label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed);
+                }
+                return label;
+              }
+            }
+          }
+        },
+        animation: {
+          animateRotate: true,
+          animateScale: true,
+          duration: 1000
+        }
+      });
+      runChat(getChartDataAndPrompt('Sales Distribution by Region', salesRegionLabels, salesRegionData, 'pie'), 'salesRegionSummary');
+
+      // Financial KPIs - Radar Chart
+      const kpiLabels = ['Profit Margin', 'Cash Flow', 'ROI', 'Current Ratio', 'Debt-to-Equity'];
+      const kpiData = [0.25, 0.15, 0.18, 2.5, 0.8]; // Example values (normalized or actual)
+      createChart('financialKpisChart', 'radar', {
+        labels: kpiLabels,
+        datasets: [{
+          label: 'Current Performance',
+          data: kpiData,
+          backgroundColor: 'rgba(52, 104, 192, 0.3)',
+          borderColor: 'var(--primary-blue)',
+          pointBackgroundColor: 'var(--primary-blue)',
+          pointBorderColor: 'var(--card-background)',
+          pointHoverBackgroundColor: 'var(--card-background)',
+          pointHoverBorderColor: 'var(--primary-blue)',
+          borderWidth: 2,
+          fill: true
+        }]
+      }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Key Financial Performance Indicators',
+            font: { size: 16, weight: 'bold' },
+            color: 'var(--text-dark)'
+          },
+          legend: {
+            position: 'top',
+            labels: {
+              font: { size: 12 },
+              color: 'var(--text-dark)'
+            }
+          },
+          tooltip: {
+            enabled: true,
+            backgroundColor: 'var(--text-dark)',
+            titleColor: 'var(--text-light)',
+            bodyColor: 'var(--text-light)',
+            padding: 10,
+            cornerRadius: 5,
+            callbacks: {
+              label: function(context) {
+                let label = context.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.r !== null) {
+                  // Custom formatting for each KPI
+                  if (context.label === 'Profit Margin' || context.label === 'ROI') {
+                    label += (context.parsed.r * 100).toFixed(2) + '%';
+                  } else if (context.label === 'Cash Flow') {
+                    label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.r * 1000000); // Assuming a base for cash flow
+                  } else {
+                    label += context.parsed.r.toFixed(2);
+                  }
+                }
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          r: {
+            beginAtZero: true,
+            angleLines: {
+              color: 'var(--border-light)'
+            },
+            grid: {
+              color: 'var(--border-light)'
+            },
+            pointLabels: {
+              font: { size: 12, weight: 'bold' },
+              color: 'var(--text-dark)'
+            },
+            ticks: {
+              display: false // Hide radial ticks
+            }
+          }
+        }
+        ,
+        animation: {
+          duration: 1000,
+          easing: 'easeOutBounce'
+        }
+      });
+      
+      // Add AI summary for Financial KPIs Radar Chart
+      const kpiPrompt = `Provide a concise summary for the Key Financial Performance Indicators radar chart. The KPIs are: Profit Margin, Cash Flow, ROI, Current Ratio, Debt-to-Equity with values: 0.25, 0.15, 0.18, 2.5, 0.8. Highlight the current performance, strengths, weaknesses, and suggest actionable insights.`;
+      runChat(kpiPrompt, 'financialKpisSummary');
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOMContentLoaded event fired');
+      initializeDashboardCharts();
+    });
+</script>
+</body>
+</html>
