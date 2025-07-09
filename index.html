@@ -213,6 +213,31 @@
      color: var(--primary-blue);
    }
 
+   .loader-container {
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     justify-content: center;
+     padding: 1rem;
+     color: var(--text-dark);
+     min-height: 100px; /* Ensure it has some height */
+   }
+
+   .loader {
+     border: 4px solid #f3f3f3; /* Light grey */
+     border-top: 4px solid var(--primary-blue); /* Blue */
+     border-radius: 50%;
+     width: 30px;
+     height: 30px;
+     animation: spin 1s linear infinite;
+     margin-bottom: 1rem;
+   }
+
+   @keyframes spin {
+     0% { transform: rotate(0deg); }
+     100% { transform: rotate(360deg); }
+   }
+
    .overall-status-container {
      margin-top: 3rem;
      padding: 2rem;
@@ -399,6 +424,14 @@
             </div>
             <div id="financialKpisSummary" class="summary-container"></div>
           </section>
+          <section class="card" id="ar-aging-section">
+            <h2>Accounts Receivable (A/R) Aging</h2>
+            <p class="chart-description">Monitors outstanding invoices by aging categories to improve cash flow management.</p>
+            <div class="chart-container">
+              <canvas id="arAgingChart"></canvas>
+            </div>
+            <div id="arAgingSummary" class="summary-container"></div>
+          </section>
         </div>
       </section>
 
@@ -469,6 +502,14 @@
             </div>
             <div id="inventoryTurnoverSummary" class="summary-container"></div>
           </section>
+          <section class="card" id="stock-valuation-section">
+            <h2>Stock Valuation by Category</h2>
+            <p class="chart-description">Shows the total valuation of inventory stock, broken down by product category.</p>
+            <div class="chart-container">
+              <canvas id="stockValuationChart"></canvas>
+            </div>
+            <div id="stockValuationSummary" class="summary-container"></div>
+          </section>
         </div>
       </section>
     </main>
@@ -521,12 +562,19 @@
      * @param {string} sender - The sender of the message (e.g., 'AI', 'User').
      * @param {string} text - The text content of the message.
      */
-    function appendMessage(targetElementId, sender, text) {
+    function appendMessage(targetElementId, sender, text, isLoading = false) {
       const targetDiv = document.getElementById(targetElementId);
       if (targetDiv) {
-        // Parse markdown text to HTML using marked
-        const parsedHTML = marked.parse(text);
-        targetDiv.innerHTML = `<p><strong>${sender}:</strong></p>` + parsedHTML;
+        if (isLoading) {
+          targetDiv.innerHTML = `
+            <div class="loader-container">
+              <div class="loader"></div>
+              <p>${text}</p>
+            </div>`;
+        } else {
+          const parsedHTML = marked.parse(text);
+          targetDiv.innerHTML = `<p><strong>${sender}:</strong></p>` + parsedHTML;
+        }
       }
     }
 
@@ -536,20 +584,20 @@
      * @param {string} targetElementId - The ID of the div element to display the summary in.
      */
     async function runChat(prompt, targetElementId) {
-      const loadingMessage = "Loading summary...";
-      appendMessage(targetElementId, "AI", loadingMessage); // Display loading indicator
+      const loadingMessage = "Generating AI summary...";
+      appendMessage(targetElementId, "AI", loadingMessage, true); // Display loading indicator
 
       try {
         const chat = await startChatSession();
         const result = await chat.sendMessage(prompt);
         const response = await result.response;
         const text = response.text();
-        appendMessage(targetElementId, "AI", text);
+        appendMessage(targetElementId, "AI", text, false);
         chatHistory.push({ role: "user", parts: [{ text: prompt }] });
         chatHistory.push({ role: "model", parts: [{ text: text }] });
       } catch (error) {
         console.error("Error calling Gemini API:", error);
-        appendMessage(targetElementId, "AI", "Error fetching summary.");
+        appendMessage(targetElementId, "AI", "Error fetching summary.", false);
       }
     }
 
@@ -944,11 +992,11 @@
           label: 'Purchase Order Status',
           data: purchaseStatusData,
           backgroundColor: [
-            'var(--accent-orange)', // Pending (Orange)
-            'var(--secondary-green)', // Approved (Green)
-            'var(--primary-blue)', // Shipped (Blue)
-            '#9b59b6', // Delivered (Purple)
-            '#d0021b'  // Cancelled (Red)
+            '#f5a623', // Pending (Amber)
+            '#28a745', // Approved (Green)
+            '#007bff', // Shipped (Blue)
+            '#6f42c1', // Delivered (Purple)
+            '#dc3545'  // Cancelled (Red)
           ],
           borderColor: 'var(--card-background)',
           borderWidth: 2
@@ -1068,6 +1116,66 @@
       });
       runChat(getChartDataAndPrompt('Monthly Inventory Turnover Rate', months, inventoryTurnoverData, 'bar'), 'inventoryTurnoverSummary');
 
+      // Stock Valuation by Category - Pie Chart
+      const stockValuationLabels = ['Electronics', 'Appliances', 'Furniture', 'Apparel', 'Groceries'];
+      const stockValuationData = generateCategoryData(420000, stockValuationLabels.length); // Total value from KPI card
+      chartInstances.stockValuationChart = createChart('stockValuationChart', 'pie', {
+        labels: stockValuationLabels,
+        datasets: [{
+          label: 'Stock Valuation',
+          data: stockValuationData,
+          backgroundColor: [
+            '#3498db', '#e74c3c', '#9b59b6', '#f1c40f', '#2ecc71'
+          ],
+          borderColor: 'var(--card-background)',
+          borderWidth: 2
+        }]
+      }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Stock Valuation by Category',
+            font: { size: 16, weight: 'bold' },
+            color: 'var(--text-dark)'
+          },
+          legend: {
+            position: 'bottom',
+            labels: {
+              font: { size: 12 },
+              color: 'var(--text-dark)'
+            }
+          },
+          tooltip: {
+            enabled: true,
+            backgroundColor: 'var(--text-dark)',
+            titleColor: 'var(--text-light)',
+            bodyColor: 'var(--text-light)',
+            padding: 10,
+            cornerRadius: 5,
+            callbacks: {
+              label: function(context) {
+                let label = context.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed !== null) {
+                  label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed);
+                }
+                return label;
+              }
+            }
+          }
+        },
+        animation: {
+          animateRotate: true,
+          animateScale: true,
+          duration: 1000
+        }
+      });
+      runChat(getChartDataAndPrompt('Stock Valuation by Category', stockValuationLabels, stockValuationData, 'pie'), 'stockValuationSummary');
+ 
       // Sales by Region - Pie Chart
       const salesRegionLabels = ['North America', 'Europe', 'Asia', 'South America', 'Africa', 'Oceania'];
       const salesRegionData = generateCategoryData(1000000, salesRegionLabels.length);
@@ -1077,7 +1185,7 @@
           label: 'Sales by Region',
           data: salesRegionData,
           backgroundColor: [
-            'var(--primary-blue)', 'var(--secondary-green)', 'var(--accent-orange)', '#d0021b', '#9b59b6', '#3498db'
+            '#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949'
           ],
           borderColor: 'var(--card-background)',
           borderWidth: 2
@@ -1218,6 +1326,88 @@
       // Add AI summary for Financial KPIs Radar Chart
       const kpiPrompt = `Provide a concise summary for the Key Financial Performance Indicators radar chart. The KPIs are: Profit Margin, Cash Flow, ROI, Current Ratio, Debt-to-Equity with values: 0.25, 0.15, 0.18, 2.5, 0.8. Highlight the current performance, strengths, weaknesses, and suggest actionable insights.`;
       runChat(kpiPrompt, 'financialKpisSummary');
+
+     // Accounts Receivable Aging - Horizontal Stacked Bar Chart
+     const arAgingLabels = ['Customer A', 'Customer B', 'Customer C', 'Customer D', 'Customer E'];
+     const arAgingData = {
+       '0-30 Days': [15000, 22000, 18000, 9000, 25000],
+       '31-60 Days': [8000, 5000, 12000, 3000, 7000],
+       '61-90 Days': [4000, 2000, 5000, 1000, 3000],
+       '90+ Days': [1500, 500, 2500, 500, 1000]
+     };
+     const arAgingDatasets = Object.keys(arAgingData).map((key, index) => ({
+       label: key,
+       data: arAgingData[key],
+       backgroundColor: ['#4a90e2', '#50e3c2', '#f5a623', '#d0021b'][index],
+       borderColor: '#ffffff',
+       borderWidth: 1,
+       borderRadius: 5,
+     }));
+
+     chartInstances.arAgingChart = createChart('arAgingChart', 'bar', {
+       labels: arAgingLabels,
+       datasets: arAgingDatasets
+     }, {
+       indexAxis: 'y', // Horizontal bar chart
+       responsive: true,
+       maintainAspectRatio: false,
+       plugins: {
+         title: {
+           display: true,
+           text: 'Accounts Receivable (A/R) Aging',
+           font: { size: 16, weight: 'bold' },
+           color: 'var(--text-dark)'
+         },
+         legend: {
+           position: 'top',
+         },
+         tooltip: {
+           mode: 'index',
+           intersect: false,
+           callbacks: {
+             label: function(context) {
+               let label = context.dataset.label || '';
+               if (label) {
+                 label += ': ';
+               }
+               if (context.parsed.x !== null) {
+                 label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.x);
+               }
+               return label;
+             }
+           }
+         }
+       },
+       scales: {
+         x: {
+           stacked: true,
+           title: {
+             display: true,
+             text: 'Amount (USD)'
+           },
+           ticks: {
+             callback: function(value) {
+               return new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' }).format(value);
+             }
+           }
+         },
+         y: {
+           stacked: true
+         }
+       }
+     });
+
+     const arPrompt = `Provide a summary for the A/R Aging chart. Data: ${JSON.stringify(arAgingData)}. Highlight customers with significant overdue amounts and suggest collection priorities.`;
+     runChat(arPrompt, 'arAgingSummary');
+const overallSummaryPrompt = `
+        Provide a holistic executive summary of the company's overall performance based on the following key data points:
+        - **Financials**: Quarterly revenues are [${quarterlyRevenue.join(', ')}], and expenses are [${quarterlyExpenses.join(', ')}].
+        - **Sales**: Monthly sales revenue shows a trend with data points like [${salesRevenueData.slice(0,3).join(', ')}...]. Sales are distributed regionally with top regions being ${salesRegionLabels[0]} and ${salesRegionLabels[1]}.
+        - **Inventory**: Current inventory status shows ${inventoryStatusData[0]} items in stock and ${inventoryStatusData[2]} out of stock. The monthly inventory turnover rate is trending around ${inventoryTurnoverData[inventoryTurnoverData.length-1]}.
+        
+        Synthesize these points to assess the company's health. Highlight key strengths, weaknesses, and provide actionable strategic recommendations for the next quarter.
+      `;
+      runChat(overallSummaryPrompt, 'overallStatusSummary');
     }
     document.addEventListener('DOMContentLoaded', function() {
       console.log('DOMContentLoaded event fired');
