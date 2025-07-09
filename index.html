@@ -918,10 +918,13 @@
 
       // Create table headers
       const headerRow = document.createElement('tr');
-      // For charts with labels (like bar, line, pie, doughnut)
       if (chart.data.labels && chart.data.labels.length > 0) {
         const thLabel = document.createElement('th');
         thLabel.textContent = 'Category';
+        headerRow.appendChild(thLabel);
+      } else {
+        const thLabel = document.createElement('th');
+        thLabel.textContent = 'Entry';
         headerRow.appendChild(thLabel);
       }
       chart.data.datasets.forEach(dataset => {
@@ -941,22 +944,39 @@
           row.appendChild(tdLabel);
           chart.data.datasets.forEach(dataset => {
             const td = document.createElement('td');
-            td.textContent = dataset.data[i];
+            const value = dataset.data[i];
+            if (typeof value === 'object' && value !== null) {
+              let text = `x: ${value.x}, y: ${value.y}`;
+              if (value.r !== undefined) text += `, r: ${value.r}`;
+              td.textContent = text;
+            } else {
+              td.textContent = value;
+            }
             row.appendChild(td);
           });
           tbody.appendChild(row);
         });
-      } else if (chart.data.datasets.length > 0) { // For charts without explicit labels like radar (if data is simple array)
-        const row = document.createElement('tr');
-        const tdLabel = document.createElement('td');
-        tdLabel.textContent = 'Values'; // Generic label
-        row.appendChild(tdLabel);
-        chart.data.datasets[0].data.forEach(value => {
-          const td = document.createElement('td');
-          td.textContent = value;
-          row.appendChild(td);
-        });
-        tbody.appendChild(row);
+      } else if (chart.data.datasets.length > 0) {
+        const rowsCount = chart.data.datasets[0].data.length;
+        for (let i = 0; i < rowsCount; i++) {
+          const row = document.createElement('tr');
+          const tdLabel = document.createElement('td');
+          tdLabel.textContent = `Item ${i + 1}`;
+          row.appendChild(tdLabel);
+          chart.data.datasets.forEach(dataset => {
+            const td = document.createElement('td');
+            const value = dataset.data[i];
+            if (typeof value === 'object' && value !== null) {
+              let text = `x: ${value.x}, y: ${value.y}`;
+              if (value.r !== undefined) text += `, r: ${value.r}`;
+              td.textContent = text;
+            } else {
+              td.textContent = value;
+            }
+            row.appendChild(td);
+          });
+          tbody.appendChild(row);
+        }
       }
       table.appendChild(tbody);
 
@@ -970,7 +990,11 @@
       }
       chart.data.datasets.forEach(dataset => {
         const tdTotal = document.createElement('td');
-        const total = dataset.data.reduce((sum, val) => sum + val, 0);
+        const total = dataset.data.reduce((sum, val) => {
+          if (typeof val === 'number') return sum + val;
+          if (val && typeof val === 'object' && typeof val.y === 'number') return sum + val.y;
+          return sum;
+        }, 0);
         tdTotal.textContent = total;
         footerRow.appendChild(tdTotal);
       });
@@ -981,8 +1005,13 @@
 
       // Highlight the max value row for primary dataset
       if (chart.data.labels && chart.data.labels.length > 0) {
-        const maxVal = Math.max(...chart.data.datasets[0].data);
-        const maxIndex = chart.data.datasets[0].data.indexOf(maxVal);
+        const values = chart.data.datasets[0].data.map(d => {
+          if (typeof d === 'number') return d;
+          if (d && typeof d === 'object' && typeof d.y === 'number') return d.y;
+          return 0;
+        });
+        const maxVal = Math.max(...values);
+        const maxIndex = values.indexOf(maxVal);
         const bodyRows = tbody.querySelectorAll('tr');
         if (bodyRows[maxIndex]) {
           bodyRows[maxIndex].classList.add('max-value-row');
